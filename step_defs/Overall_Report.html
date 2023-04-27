@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>CARLETON 360 LOGIN AUTOMATION</title>
+    <style>body {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  /* do not increase min-width as some may use split screens */
+  min-width: 800px;
+  color: #999;
+}
+
+h1 {
+  font-size: 24px;
+  color: black;
+}
+
+h2 {
+  font-size: 16px;
+  color: black;
+}
+
+p {
+  color: black;
+}
+
+a {
+  color: #999;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+/******************************
+ * SUMMARY INFORMATION
+ ******************************/
+#environment td {
+  padding: 5px;
+  border: 1px solid #E6E6E6;
+}
+#environment tr:nth-child(odd) {
+  background-color: #f6f6f6;
+}
+
+/******************************
+ * TEST RESULT COLORS
+ ******************************/
+span.passed,
+.passed .col-result {
+  color: green;
+}
+
+span.skipped,
+span.xfailed,
+span.rerun,
+.skipped .col-result,
+.xfailed .col-result,
+.rerun .col-result {
+  color: orange;
+}
+
+span.error,
+span.failed,
+span.xpassed,
+.error .col-result,
+.failed .col-result,
+.xpassed .col-result {
+  color: red;
+}
+
+/******************************
+ * RESULTS TABLE
+ *
+ * 1. Table Layout
+ * 2. Extra
+ * 3. Sorting items
+ *
+ ******************************/
+/*------------------
+ * 1. Table Layout
+ *------------------*/
+#results-table {
+  border: 1px solid #e6e6e6;
+  color: #999;
+  font-size: 12px;
+  width: 100%;
+}
+#results-table th,
+#results-table td {
+  padding: 5px;
+  border: 1px solid #E6E6E6;
+  text-align: left;
+}
+#results-table th {
+  font-weight: bold;
+}
+
+/*------------------
+ * 2. Extra
+ *------------------*/
+.log {
+  background-color: #e6e6e6;
+  border: 1px solid #e6e6e6;
+  color: black;
+  display: block;
+  font-family: "Courier New", Courier, monospace;
+  height: 230px;
+  overflow-y: scroll;
+  padding: 5px;
+  white-space: pre-wrap;
+}
+.log:only-child {
+  height: inherit;
+}
+
+div.image {
+  border: 1px solid #e6e6e6;
+  float: right;
+  height: 240px;
+  margin-left: 5px;
+  overflow: hidden;
+  width: 320px;
+}
+div.image img {
+  width: 320px;
+}
+
+div.video {
+  border: 1px solid #e6e6e6;
+  float: right;
+  height: 240px;
+  margin-left: 5px;
+  overflow: hidden;
+  width: 320px;
+}
+div.video video {
+  overflow: hidden;
+  width: 320px;
+  height: 240px;
+}
+
+.collapsed {
+  display: none;
+}
+
+.expander::after {
+  content: " (show details)";
+  color: #BBB;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.collapser::after {
+  content: " (hide details)";
+  color: #BBB;
+  font-style: italic;
+  cursor: pointer;
+}
+
+/*------------------
+ * 3. Sorting items
+ *------------------*/
+.sortable {
+  cursor: pointer;
+}
+
+.sort-icon {
+  font-size: 0px;
+  float: left;
+  margin-right: 5px;
+  margin-top: 5px;
+  /*triangle*/
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+}
+.inactive .sort-icon {
+  /*finish triangle*/
+  border-top: 8px solid #E6E6E6;
+}
+.asc.active .sort-icon {
+  /*finish triangle*/
+  border-bottom: 8px solid #999;
+}
+.desc.active .sort-icon {
+  /*finish triangle*/
+  border-top: 8px solid #999;
+}
+
+/******************************
+ * CUSTOM CSS
+ * C:\Users\User\.virtualenvs\FinalProject-04MrYBZW\Lib\site-packages\pytest_bdd_html\resources\style.css
+ ******************************/
+
+#results-table {
+    width: 100%;
+}
+
+.col-description h3 {
+    margin: 0 0 .2em;
+    color: indigo;
+}
+
+.col-description .step > .step-name {
+    color: goldenrod;
+    font-weight: bold;
+    margin-right: .5em;
+}
+
+.col-description .step {
+    margin-bottom: .3em;
+}
+
+.col-description .text {
+    margin-bottom: 1.5em;
+}
+
+.col-description .func-doc {
+    white-space: pre-wrap;
+    margin: 0;
+}
+
+.col-description .step-is-and {
+    margin-left: 1em;
+}
+</style></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    let visibleString = getQueryParameter('visible') || 'all';
+    visibleString = visibleString.toLowerCase();
+    const checkedItems = visibleString.split(',');
+
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++) {
+        filterItems[i].hidden = false;
+
+        if (visibleString != 'all') {
+            filterItems[i].checked = checkedItems.includes(filterItems[i].getAttribute('data-test-result'));
+            filterTable(filterItems[i]);
+        }
+    }
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>CARLETON 360 LOGIN AUTOMATION</h1>
+    <p>Report generated on 26-Apr-2023 at 14:27:46 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.2.0</p>
+    <h2>Environment</h2>
+    <table id="environment">
+      <tr>
+        <td>JAVA_HOME</td>
+        <td>C:\Program Files\Java\jdk1.8.0_333</td></tr>
+      <tr>
+        <td>Packages</td>
+        <td>{"pluggy": "1.0.0", "pytest": "7.3.1"}</td></tr>
+      <tr>
+        <td>Platform</td>
+        <td>Windows-10-10.0.19045-SP0</td></tr>
+      <tr>
+        <td>Plugins</td>
+        <td>{"bdd": "6.1.1", "bdd-html": "0.1.14a0", "html": "3.2.0", "metadata": "2.0.4"}</td></tr>
+      <tr>
+        <td>Python</td>
+        <td>3.11.1</td></tr></table>
+    <h2>Summary</h2>
+    <p>7 tests ran in 790.96 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">6 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">1 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th>Description</th>
+          <th class="sortable" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="5">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">step_defs/test_Carleton360_Login_steps.py::test_validating_the_carleton_360_login_buttons_navigation</td>
+          <td Class="col-description">
+            <div Class="col-description-bdd-doc">
+              <div>
+                <h3>Feature</h3>
+                <div Class="text">
+                  <div>Carleton 360 Login</div>
+                  <div></div></div></div>
+              <div>
+                <h3>Scenario</h3>
+                <div Class="text">Validating the CARLETON 360 LOGIN buttons navigation</div></div>
+              <div>
+                <h3>Steps</h3>
+                <div Class="steps">
+                  <div Class="step"><span Class="step-name ">Given</span><span Class="step-message">I have navigated to the &quot;Carleton 360 login&quot; page</span></div>
+                  <div Class="step"><span Class="step-name ">Then</span><span Class="step-message">I should be able to click the button for the option &quot;Have a Carleton360 account?&quot; with &quot;Log in here with your email →&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">should navigate to the &quot;CARLETON 360 LOGIN&quot; page see the Carleton360 login page title with icon &quot;Carleton 360&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;← Back&quot; button on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the login page title with icon &quot;Carleton 360&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the correct opening text &quot;Please select the appropriate login for you.&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click the button for the option &quot;Have a Carleton360 account?&quot; with &quot;Log in here with your email →&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">should navigate to the &quot;CARLETON 360 LOGIN&quot; page see the Carleton360 login page title with icon &quot;Carleton 360&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Forgot password?&quot; button on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">should redirected to the correct link page &quot;https://360.carleton.ca/urd/sits.urd//run/siw_pqs.forgot?&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">should validate the text &quot;FORGOT PASSWORD?&quot; &quot;Please enter your account details in order to reset your Carleton360 Password.&quot; &quot;Important!&quot; &quot;MC1 Accounts and Passwords&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Account Verification&quot; panel title</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Username&quot; input box on the &quot;Forgot password&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Surname&quot; input box on the &quot;Forgot password&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Date of birth&quot; input box on the &quot;Forgot password&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;MC1 Accounts and Passwords&quot; link text on the &quot;Forgot password&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">should validate the redirected page &quot;https://carleton.ca/its/help-centre/accounts-and-passwords/&quot;</span></div></div></div></div></td>
+          <td class="col-duration">28.13</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div><div><img src="screenshots\step_defs_test_Carleton360_Login_steps_test_validating_the_carleton_360_login_buttons_navigation.png" alt="screenshot" style="width:304px;height:228px;" onclick="window.open(this.src)" align="right"/></div></div>
+            <div class="log">fixturefunc = &lt;function step_validate_redirected_page at 0x000001FD90DB8540&gt;<br/>request = &lt;FixtureRequest for &lt;Function test_validating_the_carleton_360_login_buttons_navigation&gt;&gt;<br/>kwargs = {&#x27;browser&#x27;: &lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&quot;3d58bbfc9b15c59a70b2eec944dda648&quot;)&gt;, &#x27;expected_url&#x27;: &#x27;https://carleton.ca/its/help-centre/accounts-and-passwords/&#x27;}<br/><br/>    def call_fixture_func(<br/>        fixturefunc: &quot;_FixtureFunc[FixtureValue]&quot;, request: FixtureRequest, kwargs<br/>    ) -&gt; FixtureValue:<br/>        if is_generator(fixturefunc):<br/>            fixturefunc = cast(<br/>                Callable[..., Generator[FixtureValue, None, None]], fixturefunc<br/>            )<br/>            generator = fixturefunc(**kwargs)<br/>            try:<br/>                fixture_result = next(generator)<br/>            except StopIteration:<br/>                raise ValueError(f&quot;{request.fixturename} did not yield a value&quot;) from None<br/>            finalizer = functools.partial(_teardown_yield_fixture, fixturefunc, generator)<br/>            request.addfinalizer(finalizer)<br/>        else:<br/>            fixturefunc = cast(Callable[..., FixtureValue], fixturefunc)<br/>&gt;           fixture_result = fixturefunc(**kwargs)<br/><br/>C:\Users\User\.virtualenvs\FinalProject-04MrYBZW\Lib\site-packages\_pytest\fixtures.py:909: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>browser = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&quot;3d58bbfc9b15c59a70b2eec944dda648&quot;)&gt;<br/>expected_url = &#x27;https://carleton.ca/its/help-centre/accounts-and-passwords/&#x27;<br/><br/>    @then(parsers.parse(&#x27;should validate the redirected page &quot;{expected_url}&quot;&#x27;))<br/>    def step_validate_redirected_page(browser, expected_url):<br/>        # Switch to the new tab<br/>        browser.switch_to.window(browser.window_handles[-1])<br/>&gt;       assert browser.current_url == expected_url<br/><span class="error">E       AssertionError: assert &#x27;https://carleton.ca/its/help-centre/accounts-and-passwords-2/&#x27; == &#x27;https://carleton.ca/its/help-centre/accounts-and-passwords/&#x27;</span><br/><span class="error">E         - https://carleton.ca/its/help-centre/accounts-and-passwords/</span><br/><span class="error">E         + https://carleton.ca/its/help-centre/accounts-and-passwords-2/</span><br/><span class="error">E         ?                                                           ++</span><br/><br/>test_Carleton360_Login_steps.py:199: AssertionError<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">step_defs/test_Carleton360_Login_steps.py::test_validating_the_carleton_360_login_home_page</td>
+          <td Class="col-description">
+            <div Class="col-description-bdd-doc">
+              <div>
+                <h3>Feature</h3>
+                <div Class="text">
+                  <div>Carleton 360 Login</div>
+                  <div></div></div></div>
+              <div>
+                <h3>Scenario</h3>
+                <div Class="text">Validating_the_Carleton_360_login_home_page</div></div>
+              <div>
+                <h3>Steps</h3>
+                <div Class="steps">
+                  <div Class="step"><span Class="step-name ">Given</span><span Class="step-message">I have navigated to the &quot;Carleton 360 login&quot; page</span></div>
+                  <div Class="step"><span Class="step-name ">Then</span><span Class="step-message">I should see the login page title with icon &quot;Carleton 360&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the correct opening text &quot;Please select the appropriate login for you.&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the option &quot;Have a Carleton360 account?&quot; with text &quot;You have created an account but have not yet submitted an application to Carleton.&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the button for the option &quot;Have a Carleton360 account?&quot; with &quot;Log in here with your email →&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the option &quot;Already have a MyCarletonOne (MC1) account?&quot; with text &quot;You have previously submitted an application, or are a student, staff or faculty member.&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the button for the option &quot;Already have a MyCarletonOne (MC1) account?&quot; with &quot;Log in here with your MC1 credentials →&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the option &quot;No Account?&quot; with text &quot;No Account?&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the button for the option &quot;No Account?&quot; with &quot;Register for Carleton360&quot;</span></div></div></div></div></td>
+          <td class="col-duration">16.71</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">step_defs/test_Carleton360_Login_steps.py::test_validating_the_carleton_360_login_page</td>
+          <td Class="col-description">
+            <div Class="col-description-bdd-doc">
+              <div>
+                <h3>Feature</h3>
+                <div Class="text">
+                  <div>Carleton 360 Login</div>
+                  <div></div></div></div>
+              <div>
+                <h3>Scenario</h3>
+                <div Class="text">Validating the CARLETON 360 LOGIN page</div></div>
+              <div>
+                <h3>Steps</h3>
+                <div Class="steps">
+                  <div Class="step"><span Class="step-name ">Given</span><span Class="step-message">I have navigated to the &quot;Carleton 360 login&quot; page</span></div>
+                  <div Class="step"><span Class="step-name ">Then</span><span Class="step-message">I should be able to click the button for the option &quot;Have a Carleton360 account?&quot; with &quot;Log in here with your email →&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">should navigate to the &quot;CARLETON 360 LOGIN&quot; page see the Carleton360 login page title with icon &quot;Carleton 360&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;← Back&quot; button on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Carleton 360 Login&quot; panel title</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Username&quot; input box on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Password&quot; input box on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Log in&quot; button on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Forgot password?&quot; button on the &quot;CARLETON 360 LOGIN&quot; page</span></div></div></div></div></td>
+          <td class="col-duration">13.75</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">step_defs/test_Carleton360_Login_steps.py::test_failed_carleton360_login</td>
+          <td Class="col-description">
+            <div Class="col-description-bdd-doc">
+              <div>
+                <h3>Feature</h3>
+                <div Class="text">
+                  <div>Carleton 360 Login</div>
+                  <div></div></div></div>
+              <div>
+                <h3>Scenario</h3>
+                <div Class="text">Failed Carleton360 login</div></div>
+              <div>
+                <h3>Steps</h3>
+                <div Class="steps">
+                  <div Class="step"><span Class="step-name ">Given</span><span Class="step-message">I have navigated to the &quot;Carleton 360 login&quot; page</span></div>
+                  <div Class="step"><span Class="step-name ">Then</span><span Class="step-message">I should be able to click the button for the option &quot;Have a Carleton360 account?&quot; with &quot;Log in here with your email →&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">should navigate to the &quot;CARLETON 360 LOGIN&quot; page see the Carleton360 login page title with icon &quot;Carleton 360&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see an empty &quot;Username&quot; input box on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see an empty &quot;Password&quot; input box on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Log in&quot; button on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see a &quot;Username Not Provided&quot; error message &quot;In order to login, you must provide a username.&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to enter &quot;Venkat&quot; in &quot;Username&quot; input box on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see an empty &quot;Password&quot; input box on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Log in&quot; button on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see a &quot;Password Not Provided&quot; error message &quot;In order to login, you must provide a password.&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to enter &quot;Venkat&quot; in &quot;Password&quot; input box on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Log in&quot; button on the &quot;CARLETON 360 LOGIN&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see a &quot;Username and/or password Invalid&quot; error message &quot;The user name or password you supplied are invalid. Please try again.&quot;</span></div></div></div></div></td>
+          <td class="col-duration">28.92</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">step_defs/test_Carleton360_Login_steps.py::test_validating_the_carleton_sso_federated_portal_page</td>
+          <td Class="col-description">
+            <div Class="col-description-bdd-doc">
+              <div>
+                <h3>Feature</h3>
+                <div Class="text">
+                  <div>Carleton 360 Login</div>
+                  <div></div></div></div>
+              <div>
+                <h3>Scenario</h3>
+                <div Class="text">Validating the Carleton SSO Federated Portal page</div></div>
+              <div>
+                <h3>Steps</h3>
+                <div Class="steps">
+                  <div Class="step"><span Class="step-name ">Given</span><span Class="step-message">I have navigated to the &quot;Carleton 360 login&quot; page</span></div>
+                  <div Class="step"><span Class="step-name ">Then</span><span Class="step-message">I should be able to click the button for the option &quot;Already have a MyCarletonOne (MC1) account?&quot; with &quot;Log in here with your MC1 credentials →&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">should navigate to the &quot;Carleton SSO Federated Portal&quot; page see the &quot;Sign In&quot; page title</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should validate the login message &quot;Welcome to the Carleton SSO Federated Portal. &quot; &quot;MyCarletonOne&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Username&quot; input box on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Password&quot; input box on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Sign In&quot; button on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Forgot password?&quot; button on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Password&quot; link text on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">should validate the redirected page &quot;https://carleton.ca/its/help-centre/confirm-account-registration/&quot;</span></div></div></div></div></td>
+          <td class="col-duration">16.14</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">step_defs/test_Carleton360_Login_steps.py::test_failed_carleton_sso_login</td>
+          <td Class="col-description">
+            <div Class="col-description-bdd-doc">
+              <div>
+                <h3>Feature</h3>
+                <div Class="text">
+                  <div>Carleton 360 Login</div>
+                  <div></div></div></div>
+              <div>
+                <h3>Scenario</h3>
+                <div Class="text">Failed Carleton SSO login</div></div>
+              <div>
+                <h3>Steps</h3>
+                <div Class="steps">
+                  <div Class="step"><span Class="step-name ">Given</span><span Class="step-message">I have navigated to the &quot;Carleton 360 login&quot; page</span></div>
+                  <div Class="step"><span Class="step-name ">Then</span><span Class="step-message">I should be able to click the button for the option &quot;Already have a MyCarletonOne (MC1) account?&quot; with &quot;Log in here with your MC1 credentials →&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">should navigate to the &quot;Carleton SSO Federated Portal&quot; page see the &quot;Sign In&quot; page title</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see an empty &quot;Username&quot; input box on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see an empty &quot;Password&quot; input box on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Sign In&quot; button on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see a &quot;Enter your MyCarletonOne username in the format &quot;cunet\username&quot; or &quot;username@cunet.carleton.ca&quot;.&quot; error message for &quot;Username Not Provided&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to enter &quot;Venkat&quot; in &quot;Username&quot; input box on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see an empty &quot;Password&quot; input box on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Sign In&quot; button on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see a &quot;Enter your current MyCarletonOne password.&quot; error message for &quot;Password Not Provided&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to enter &quot;Venkat&quot; in &quot;Password&quot; input box on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Sign In&quot; button on the &quot;Carleton SSO Federated Portal&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see a &quot;Incorrect user ID or password. Type the correct user ID and password, and try again.&quot; error message for &quot;Username and/or password Invalid&quot;</span></div></div></div></div></td>
+          <td class="col-duration">19.73</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">step_defs/test_Carleton360_Login_steps.py::test_validating_the_carleton_360_registration_page</td>
+          <td Class="col-description">
+            <div Class="col-description-bdd-doc">
+              <div>
+                <h3>Feature</h3>
+                <div Class="text">
+                  <div>Carleton 360 Login</div>
+                  <div></div></div></div>
+              <div>
+                <h3>Scenario</h3>
+                <div Class="text">Validating the Carleton 360 Registration page</div></div>
+              <div>
+                <h3>Steps</h3>
+                <div Class="steps">
+                  <div Class="step"><span Class="step-name ">Given</span><span Class="step-message">I have navigated to the &quot;Carleton 360 login&quot; page</span></div>
+                  <div Class="step"><span Class="step-name ">Then</span><span Class="step-message">I should be able to click the button for the option &quot;No Account?&quot; with &quot;Register for Carleton360&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">should navigate to the &quot;Carleton 360 Registration&quot; page see the Carleton360 login page title with icon &quot;Carleton 360&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;Thank you for your interest in Carleton University&quot; panel title</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should validate the message &quot;Please fill in the details below to sign up for Carleton360 so we can provide you with the information you&apos;re looking for.&quot; &quot;If you have previously signed up for a Carleton360 account,  &quot; &quot;login here&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the input labels on the Carleton 360 Registration page
+| label                                       |
+| First Name                                  |
+| Middle Name(s)                              |
+| Last Name                                   |
+| Email Address                               |
+| Verify Email Address                        |
+| Date of Birth                               |
+| In which level of study are you interested? |</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;In which level of study are you interested?&quot; input on the &quot;Carleton 360 Registration&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">the dropdown contains the following &quot;In which level of study are you interested? options&quot;
+| options               |
+| Undergraduate Studies |
+| Graduate Studies      |</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I select &quot;Undergraduate Studies&quot; from the dropdown list for the &quot;In which level of study are you interested? options&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the input labels on the Carleton 360 Registration page
+| label                               |
+| Country of Residence                |
+| Select your program(s) of interest* |</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Country of Residence&quot; input on the &quot;Carleton 360 Registration&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">the dropdown contains the following &quot;Country of Residence options&quot;
+| country                         |
+| Canada                          |
+| Afghanistan                     |
+| Aland Islands                   |
+| Albania                         |
+| American Samoa                  |
+| Algeria                         |
+| Andorra                         |
+| Angola                          |
+| Anguilla                        |
+| Antarctica                      |
+| Antigua and Barbuda             |
+| Argentina                       |
+| Armenia                         |
+| Aruba                           |
+| Australia                       |
+| Austria                         |
+| Azerbaijan                      |
+| Bahamas                         |
+| Bahrain                         |
+| Bangladesh                      |
+| Barbados                        |
+| Belarus                         |
+| Belgium                         |
+| Belize                          |
+| Benin                           |
+| Bermuda                         |
+| Bhutan                          |
+| Bolivia                         |
+| Bonaire, St Eust &amp; Saba         |
+| Bosnia                          |
+| Botswana                        |
+| Bouvet Island                   |
+| Brazil                          |
+| British Indian Ocean Territory  |
+| Brunei                          |
+| Bulgaria                        |
+| Burkina Faso                    |
+| Burundi                         |
+| Cabo Verde                      |
+| Cambodia                        |
+| Cameroon                        |
+| Cayman Islands                  |
+| Central African Republic        |
+| Chad                            |
+| Chile                           |
+| China                           |
+| Christmas Island                |
+| Cocos Islands                   |
+| Colombia                        |
+| Comoros                         |
+| Congo                           |
+| Congo, Dem  Rep of the (Zaire)  |
+| Cook Islands                    |
+| Costa Rica                      |
+| Croatia                         |
+| Cuba                            |
+| Curacao                         |
+| Cyprus                          |
+| Czech Republic                  |
+| Denmark                         |
+| Djibouti                        |
+| Dominica                        |
+| Dominican Republic              |
+| East Timor                      |
+| Ecuador                         |
+| Egypt                           |
+| El Salvador                     |
+| England                         |
+| Equatorial Guinea               |
+| Eritrea                         |
+| Estonia                         |
+| Ethiopia                        |
+| Eswatini                        |
+| Ethiopia                        |
+| Falkland Islands (Malvinas)     |
+| Faroe Islands                   |
+| Fiji                            |
+| Finland                         |
+| France                          |
+| French Guiana                   |
+| French Polynesia                |
+| French Southern Territories     |
+| Gabon                           |
+| Gambia                          |
+| Georgia                         |
+| Germany                         |
+| Ghana                           |
+| Gibraltar                       |
+| Greece                          |
+| Greenland                       |
+| Grenada                         |
+| Guadeloupe                      |
+| Guam                            |
+| Guatemala                       |
+| Guernsey                        |
+| Guinea                          |
+| Guinea-Bissau                   |
+| Guyana                          |
+| Haiti                           |
+| Heard and McDonald Islands      |
+| Honduras                        |
+| Hong Kong                       |
+| Hungary                         |
+| Iceland                         |
+| India                           |
+| Indonesia                       |
+| Iran                            |
+| Iraq                            |
+| Ireland                         |
+| Isle Of Man                     |
+| Israel                          |
+| Italy                           |
+| Ivory Coast                     |
+| Jamaica                         |
+| Japan                           |
+| Jersey                          |
+| Jordan                          |
+| Kazakhstan                      |
+| Kenya                           |
+| Kiribati                        |
+| Korea,(D.P.R.)                  |
+| Korea,(Rep.of)                  |
+| Kosovo                          |
+| Kuwait                          |
+| Kyrgyzstan                      |
+| Laos                            |
+| Latvia                          |
+| Lebanon                         |
+| Lesotho                         |
+| Liberia                         |
+| Libya                           |
+| Liechtenstein                   |
+| Lithuania                       |
+| Luxembourg                      |
+| Macau                           |
+| Macedonia                       |
+| Madagascar                      |
+| Malawi                          |
+| Malaysia                        |
+| Maldives                        |
+| Mali                            |
+| Malta                           |
+| Marshall Islands                |
+| Martinique                      |
+| Mauritania                      |
+| Mauritius                       |
+| Mayotte                         |
+| Mexico                          |
+| Micronesia, Federated States of |
+| Moldova, Rep. of                |
+| Monaco                          |
+| Mongolia                        |
+| Montenegro                      |
+| Montserrat                      |
+| Morocco                         |
+| Mozambique                      |
+| Myanmar                         |
+| Namibia                         |
+| Nauru                           |
+| Nepal                           |
+| Netherlands                     |
+| New Caledonia                   |
+| New Zealand                     |
+| Nicaragua                       |
+| Niger                           |
+| Nigeria                         |
+| Niue                            |
+| Norfolk Island                  |
+| Northern Ireland                |
+| Northern Mariana Islands        |
+| Norway                          |
+| Oman                            |
+| Pakistan                        |
+| Palau                           |
+| Palestine                       |
+| Panama                          |
+| Papua New Guinea                |
+| Paraguay                        |
+| Peru                            |
+| Philippines                     |
+| Pitcairn                        |
+| Poland                          |
+| Portugal                        |
+| Puerto Rico                     |
+| Qatar                           |
+| Reunion                         |
+| Romania                         |
+| Russia                          |
+| Rwanda                          |
+| Saint Barthelemy                |
+| Saint Helena                    |
+| Saint Kitts and Nevis           |
+| Saint Lucia                     |
+| Saint Martin (French Pt)        |
+| Saint Pierre &amp; Miquelon         |
+| Samoa                           |
+| San Marino                      |
+| Sao Tome and Principe           |
+| Sark                            |
+| Saudi Arabia                    |
+| Scotland                        |
+| Senegal                         |
+| Serbia                          |
+| Seychelles                      |
+| Sierra Leone                    |
+| Singapore                       |
+| Sint Maarten (Dutch Pt)         |
+| Slovak Republic                 |
+| Slovenia                        |
+| Solomon Islands                 |
+| Somalia                         |
+| South Africa                    |
+| South Georgia &amp; S. Sandwich Is  |
+| South Sudan                     |
+| Spain                           |
+| Sri Lanka                       |
+| St. Vincent and The Grenadines  |
+| Sudan                           |
+| Suriname                        |
+| Svalbard &amp; Jan Mayen Islands    |
+| Swaziland                       |
+| Sweden                          |
+| Switzerland                     |
+| Syria                           |
+| Taiwan                          |
+| Tajikistan                      |
+| Tanzania                        |
+| Thailand                        |
+| Togo                            |
+| Tokelau                         |
+| Tonga                           |
+| Trinidad &amp; Tobago               |
+| Tunisia                         |
+| Turkey                          |
+| Turkmenistan                    |
+| Turks &amp; Caicos Islands          |
+| Tuvalu                          |
+| U.S. Minor Outlying Islands     |
+| Uganda                          |
+| Ukraine                         |
+| United Arab Emirates            |
+| United Kingdom                  |
+| United States                   |
+| Uruguay                         |
+| Uzbekistan                      |
+| Vanuatu                         |
+| Vatican City State              |
+| Venezuela                       |
+| Vietnam                         |
+| Vatican City State              |
+| Virgin Islands (U.S.)           |
+| Wales                           |
+| Wallis &amp; Futuna                 |
+| Western Sahara                  |
+| Yemen                           |
+| Zambia                          |
+| Zimbabwe                        |</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I select &quot;India&quot; from the dropdown list for the &quot;Country of Residence options&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Select your program(s) of interest*&quot; input on the &quot;Carleton 360 Registration&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">the dropdown contains the following &quot;Select your program(s) of interest* options&quot;
+| option                                           |
+| Bachelor of Architectural Studies                |
+| Bachelor of Arts                                 |
+| Bachelor of Cognitive Science                    |
+| Bachelor of Commerce                             |
+| Bachelor of Communication and Media Studies      |
+| Bachelor of Computer Science                     |
+| Bachelor of Economics                            |
+| Bachelor of Engineering                          |
+| Bachelor of Global and International Studies     |
+| Bachelor of Health Sciences                      |
+| Bachelor of Humanities (Great Books)             |
+| Bachelor of Industrial Design                    |
+| Bachelor of Information Technology               |
+| Bachelor of International Business               |
+| Bachelor of Journalism                           |
+| Bachelor of Journalism and Humanities            |
+| Bachelor of Mathematics                          |
+| Bachelor of Media Production and Design          |
+| Bachelor of Music                                |
+| Bachelor of Public Affairs and Policy Management |
+| Bachelor of Science                              |
+| Bachelor of Social Work                          |</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I select &quot;Bachelor of Engineering&quot; from the dropdown list for the &quot;Select your program(s) of interest* options&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Expected Entry Term&quot; input on the &quot;Carleton 360 Registration&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">the dropdown contains the following &quot;Expected Entry Term options&quot;
+| option         |
+| September 2023 |
+| January 2024   |
+| September 2024 |
+| September 2025 |
+| September 2026 |</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I select &quot;September 2023&quot; from the dropdown list for the &quot;Expected Entry Term options&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;In which level of study are you interested?&quot; input on the &quot;Carleton 360 Registration&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I select &quot;Graduate Studies&quot; from the dropdown list for the &quot;In which level of study are you interested? options&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the input labels on the Carleton 360 Registration page
+| label                                                   |
+| In which graduate level(s) of study are you interested? |
+| Country of Residence                                    |
+| Country of Citizenship                                  |
+| Is your most recent degree from a Canadian institution? |
+| Current or highest level of education                   |</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;In which graduate level(s) of study are you interested?&quot; input on the &quot;Carleton 360 Registration&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">the dropdown contains the following &quot;In which graduate level(s) of study are you interested? options&quot;
+| option                 |
+| Master&apos;s Programs      |
+| PhD Programs           |
+| Collaborative Programs |
+| Graduate Diplomas      |</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Expected Entry Term1&quot; input on the &quot;Carleton 360 Registration&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">the dropdown contains the following &quot;Expected Entry Term options&quot;
+| option      |
+| Winter 2023 |
+| Summer 2023 |
+| Fall 2023   |
+| Winter 2024 |
+| Summer 2024 |
+| Fall 2024   |
+| Winter 2025 |</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Expected Entry Term1&quot; input on the &quot;Carleton 360 Registration&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Country of Citizenship&quot; input on the &quot;Carleton 360 Registration&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">the dropdown contains the following &quot;Country of Citizenship options&quot;
+| country        |
+| Canada         |
+| Afghanistan    |
+| Aland Islands  |
+| Albania        |
+| American Samoa |</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I select &quot;India&quot; from the dropdown list for the &quot;Country of Citizenship options&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Is your most recent degree from a Canadian institution?&quot; input on the &quot;Carleton 360 Registration&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">the dropdown contains the following &quot;Is your most recent degree from a Canadian institution? options&quot;
+| option |
+| Yes    |
+| No     |</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I select &quot;No&quot; from the dropdown list for the &quot;Is your most recent degree from a Canadian institution? options&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should be able to click &quot;Current or highest level of education&quot; input on the &quot;Carleton 360 Registration&quot; page</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">the dropdown contains the following &quot;Current or highest level of education options&quot;
+| option               |
+| Bachelor&apos;s           |
+| Doctoral             |
+| Graduate Certificate |
+| Graduate Diploma     |
+| Master&apos;s             |</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I select &quot;Master&apos;s&quot; from the dropdown list for the &quot;Current or highest level of education options&quot;</span></div>
+                  <div Class="step"><span Class="step-name step-is-and">And</span><span Class="step-message">I should see the &quot;SUBMIT&quot; button on the &quot;Carleton 360 Registration&quot; page</span></div></div></div></div></td>
+          <td class="col-duration">666.82</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div class="empty log">No log output captured.</div></td></tr></tbody></table></body></html>
